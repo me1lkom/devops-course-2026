@@ -45,6 +45,37 @@ check "Входящие соединения запрещены по умолч�
 echo "[3] Учётные записи"
 awk -F: '$3>=1000 && $3<65534 {printf " %s (uid=%s)\n",$1,$3}' /etc/passwd
 
+
+echo "[4] Веб-сервер"
+
+# Проверка 1. Состояние службы Nginx
+check "Служба Nginx активна" "active" \
+    "$(systemctl is-active nginx)"
+
+# Проверка 2. Корректность конфигурации Nginx
+if sudo nginx -t >/dev/null 2>&1; then
+    check "Конфигурация Nginx корректна" "0" "0"
+else
+    check "Конфигурация Nginx корректна" "0" "1"
+fi
+
+# Проверка 3. Срок действия TLS-сертификата
+if openssl x509 -in /etc/ssl/certs/devops.crt \
+    -noout -checkend 2592000 >/dev/null 2>&1; then
+    check "Сертификат действителен ещё 30 дней" "0" "0"
+else
+    check "Сертификат действителен ещё 30 дней" "0" "1"
+fi
+
+# Проверка 4. Права файлов сайта и закрытого ключа
+if [[ -d /var/www/devops-site ]] \
+    && [[ -z "$(find /var/www/devops-site -perm -o+w)" ]] \
+    && [[ "$(sudo stat -c '%a' /etc/ssl/private/devops.key)" == "600" ]]; then
+    check "Права файлов сайта и TLS-ключа корректны" "yes" "yes"
+else
+    check "Права файлов сайта и TLS-ключа корректны" "yes" "no"
+fi
+
 echo "Пройдено: $PASS, не пройдено: $FAIL"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
 
