@@ -82,3 +82,16 @@
 
 ### 03-ssh-hardened
 Создан после усиления защиты SSH-сервера: изменения порта, отключения парольной аутентификации и ограничения доступа.
+
+## 8. Веб-сервер
+- **Веб-сервер:** Nginx
+- **Конфигурация:** /etc/nginx/sites-available/devops-site
+- **Каталог ресурса:** /var/www/devops-site
+- **Владелец:** devops:devops
+- **Права каталогов:** 755
+- **Права файлов:** 644
+- **TLS-сертификат:** /etc/ssl/certs/devops.crt (644)
+- **Закрытый ключ:** /etc/ssl/private/devops.key (600, root)
+- **Команда формирования сертификата:**
+  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/devops.key -out /etc/ssl/certs/devops.crt -subj "/CN=devops.local" -addext "subjectAltName=DNS:devops.local"
+- **Срок действия сертификата:** 365 дней.
