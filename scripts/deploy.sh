@@ -11,7 +11,7 @@ CA_CERT="${HOME}/devops.crt"
 LOCAL_DIR="$(git rev-parse --show-toplevel)/site/"
 
 # 1. Разбор аргумента --dry-run
-DRU_RUN=false
+DRY_RUN=false
 
 if [[ $# -gt 1 ]]; then
     echo "Ошибка: Слишком много аргументов" >&2
@@ -20,14 +20,14 @@ fi
 
 if [[ $# -eq 1 ]]; then
     if  [[ "$1" == --dry-run ]]; then
-        DRU_RUN=true
+        DRY_RUN=true
     else
         echo "Ошибка: Неизвестный аргумент" >&2
         exit 1
     fi
 fi
 
-echo "DRY_RUN=$DRU_RUN"
+echo "DRY_RUN=$DRY_RUN"
 
 # 2. Проверки перед деплоем
 if [[ ! -f "${LOCAL_DIR}index.html" ]]; then
