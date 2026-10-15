@@ -27,7 +27,7 @@ if [[ $# -eq 1 ]]; then
     fi
 fi
 
-echo "DRU_RUN=$DRU_RUN"
+echo "DRY_RUN=$DRU_RUN"
 
 # 2. Проверки перед деплоем
 if [[ ! -f "${LOCAL_DIR}index.html" ]]; then
