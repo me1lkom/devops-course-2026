@@ -95,3 +95,47 @@
 - **Команда формирования сертификата:**
   sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/devops.key -out /etc/ssl/certs/devops.crt -subj "/CN=devops.local" -addext "subjectAltName=DNS:devops.local"
 - **Срок действия сертификата:** 365 дней.
+
+
+## 9. Контейнеризация
+- **Операционная система:** Ubuntu Server 24.04 LTS (ARM64).
+- **Docker Engine:** версия 29.9.2, установлен из официального репозитория Docker (`download.docker.com/linux/ubuntu`).
+- **Docker Compose:** версия v5.6.1.
+- **Группа docker:** пользователь `devops`. Членство в группе предоставляет привилегии, сопоставимые с root.
+
+### Расположение проекта
+- **Каталог приложения на сервере:** `/home/devops/app`.
+- **Файл Compose:** `/home/devops/app/docker-compose.yml`.
+- **Dockerfile:** `/home/devops/app/Dockerfile`.
+- Исходные файлы передаются с Mac на Ubuntu через `rsync` с исключением `.env`.
+
+### Переменные окружения
+- **Файл:** `/home/devops/app/.env`.
+- **Владелец:** `devops`.
+- **Права:** `600` (`rw-------`).
+- Содержит параметры PostgreSQL и пароль.
+- Настоящий `.env` не хранится в Git и не включается в Docker-образ. В репозитории находится только `.env.example`.
+
+### Контейнеры и сеть
+- **app:** Flask-приложение, запускаемое через Gunicorn от непривилегированного пользователя `app`.
+- **db:** PostgreSQL 16 Alpine.
+- **Сеть:** `app_backend` (bridge).
+- Приложение обращается к PostgreSQL по имени сервиса `db` через внутренний DNS Docker.
+
+### Публикация портов
+- **Приложение:** `127.0.0.1:5000:5000`. Порт доступен только локально на Ubuntu.
+- **PostgreSQL:** порт `5432` не публикуется на хосте. Доступен приложению внутри сети Docker.
+- Внешние HTTPS-запросы принимает Nginx на порту `443`.
+
+### Хранение данных
+- **Именованный том:** `app_db_data`.
+- **Точка монтирования:** `/var/lib/postgresql/data` внутри контейнера PostgreSQL.
+- `docker compose down` удаляет контейнеры и сеть, сохраняя том.
+- `docker compose down -v` удаляет также том и данные PostgreSQL.
+
+### Обратный прокси-сервер
+- **Nginx:** `/etc/nginx/sites-available/devops-site`.
+- **Внешний адрес приложения:** `https://devops.local/app/`.
+- **Проксирование:** `location /app/` с `proxy_pass http://127.0.0.1:5000/;`.
+- Передаются заголовки `Host`, `X-Real-IP`, `X-Forwarded-For` и `X-Forwarded-Proto`.
+- Статический сайт из практической работы № 6 продолжает обслуживаться по адресу `https://devops.local/`.

@@ -71,3 +71,5 @@ cover/
 
 # DB
 *.sqlite3
+
+.env
