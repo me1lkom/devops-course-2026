@@ -76,6 +76,33 @@ else
     check "Права файлов сайта и TLS-ключа корректны" "yes" "no"
 fi
 
+
+echo "[5] Контейнеризация"
+
+# Проверка 1. Состояние службы Docker
+check "Служба Docker активна" "active" \
+    "$(systemctl is-active docker)"
+
+# Проверка 2. Состояние PostgreSQL
+check "Контейнер PostgreSQL здоров" "healthy" \
+    "$(docker inspect -f '{{.State.Health.Status}}' app-db-1 2>/dev/null)"
+
+# Проверка 3. Безопасность портов 5000 и 5432
+unsafe_ports=$(ss -tlnH | awk '
+    $4 ~ /:(5000|5432)$/ && $4 !~ /^127\.0\.0\.1:/ {print $4}
+')
+
+if [[ -z "$unsafe_ports" ]]; then
+    check "Порты 5000 и 5432 не доступны на внешних адресах" "yes" "yes"
+else
+    check "Порты 5000 и 5432 не доступны на внешних адресах" "yes" "$unsafe_ports"
+fi
+
+# Проверка 4. Права файла .env
+check "Права файла .env равны 600" "600" \
+    "$(stat -c '%a' /home/devops/app/.env 2>/dev/null)"
+
+
 echo "Пройдено: $PASS, не пройдено: $FAIL"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
 
